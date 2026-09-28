@@ -98,13 +98,11 @@ async function postBytes<T>(
   deviceId: string,
   bytes: Uint8Array,
   contentType: string,
+  token: string | null,
 ): Promise<T> {
   const res = await fetch(`${RECORDING_API_BASE}${path}`, {
     method: "POST",
-    headers: {
-      "content-type": contentType,
-      "x-captureflow-device": deviceId,
-    },
+    headers: recordingHeaders(deviceId, token, { "content-type": contentType }),
     body: toBody(bytes),
   });
   return parseResponse<T>(res, path);
@@ -159,6 +157,7 @@ export function createRecordingTransport(
         deviceId,
         bytes,
         "application/octet-stream",
+        token,
       ),
     uploadWebcamPart: (slug, partNumber, bytes) =>
       postBytes<PartResponse>(
@@ -166,6 +165,7 @@ export function createRecordingTransport(
         deviceId,
         bytes,
         "application/octet-stream",
+        token,
       ),
     finalizeScreen: (req: FinalizeRequest) =>
       postJson<FinalizeResponse>("/finalize", deviceId, token, req),
@@ -178,6 +178,7 @@ export function createRecordingTransport(
         deviceId,
         bytes,
         "image/jpeg",
+        token,
       );
     },
     abort: async (req: AbortRequest) => {
@@ -186,6 +187,7 @@ export function createRecordingTransport(
     state: async (slug: string) => {
       const res = await fetch(
         `${RECORDING_API_BASE}/state?slug=${encodeURIComponent(slug)}`,
+        { headers: recordingHeaders(deviceId, token) },
       );
       return parseResponse<StateResponse>(res, "/state");
     },

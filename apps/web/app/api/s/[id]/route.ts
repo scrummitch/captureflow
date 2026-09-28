@@ -1,3 +1,4 @@
+import { readBoundedBody } from "@/lib/storage-budget";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { ACCOUNT_LIMITS } from "@captureflow/quota";
@@ -54,7 +55,7 @@ async function authorise(
         res: jsonError("Sign-in expired or revoked", 401, "invalid_token"),
       };
     }
-  } else if (allowSession) {
+  } else if (allowSession && req.headers.get("origin") === req.nextUrl.origin) {
     const cookieHeader = (await headers()).get("cookie");
     const visitor = await verifySessionOrNull(cookieHeader);
     if (!visitor) {
@@ -110,7 +111,10 @@ export async function PUT(
     return jsonError("Unsupported content type", 400, "invalid_content_type");
   }
 
-  const body = await req.arrayBuffer();
+  const body = await readBoundedBody(
+    req,
+    ACCOUNT_LIMITS.perScreenshotSizeBytes,
+  );
   if (body.byteLength === 0) {
     return jsonError("Missing body", 400, "no_body");
   }

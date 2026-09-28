@@ -22,8 +22,8 @@ export function DevicesSection({ tokens }: DevicesSectionProps) {
   if (tokens.length === 0) {
     return (
       <EmptyState className="mt-4 text-center text-sm text-fg-muted">
-        No connected devices. Open the CaptureFlow desktop app and click Sign in
-        on the record bar to link this account.
+        No connected devices. Open the CaptureFlow Private recorder and click
+        Sign in on the record bar to link this account.
       </EmptyState>
     );
   }

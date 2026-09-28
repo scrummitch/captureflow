@@ -27,6 +27,7 @@ async function requireSession(): Promise<{
   userId: string;
   name: string | null;
   email: string;
+  emailVerified: boolean;
 }> {
   const auth = await getAuth();
   const session = await auth.api.getSession({ headers: await headers() });
@@ -37,11 +38,12 @@ async function requireSession(): Promise<{
     userId: session.user.id,
     name: session.user.name ?? null,
     email: session.user.email,
+    emailVerified: session.user.emailVerified,
   };
 }
 
 function getBaseUrl(): string {
-  return process.env.APP_WEB_PUBLIC_URL ?? "https://captureflow.dev";
+  return process.env.NEXT_PUBLIC_APP_WEB_SITE_URL ?? "http://localhost:3032";
 }
 
 export async function inviteMemberAction(
@@ -175,6 +177,7 @@ export async function acceptInviteAction(formData: FormData): Promise<void> {
   const env = await getAppWebEnv();
   if (!env?.DB) redirect("/recordings?invite=db-unavailable");
 
+  if (!session.emailVerified) redirect("/recordings?invite=verify-email");
   const token = formData.get("token");
   if (typeof token !== "string" || !token)
     redirect("/recordings?invite=invalid");

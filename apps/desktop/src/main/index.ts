@@ -194,7 +194,8 @@ function refreshTrayMenu(): void {
         // The dashboard's own auth gate signs the user in and exposes
         // their recording list, so no per-device routing is needed here.
         const base =
-          process.env.CAPTUREFLOW_APP_WEB_BASE ?? "https://captureflow.dev";
+          process.env.CAPTUREFLOW_APP_WEB_BASE ??
+          "https://captureflow-private.flindev.workers.dev";
         shell
           .openExternal(base)
           .catch((err) => logError("app", `failed to open dashboard: ${err}`));

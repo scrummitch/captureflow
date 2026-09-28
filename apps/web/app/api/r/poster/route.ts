@@ -1,3 +1,6 @@
+import { withStorageErrors } from "@/lib/storage-budget";
+import { readBoundedBody } from "@/lib/storage-budget";
+import { canMutateResource } from "@/lib/resource-access";
 import { NextRequest, NextResponse } from "next/server";
 import { getRecording, updateRecording } from "@/lib/recording/db";
 import { isValidSlug } from "@/lib/recording/slug";
@@ -14,7 +17,7 @@ export function OPTIONS() {
 
 // A poster may be uploaded while the video is still `pending` (the desktop
 // client races them in parallel) and overwritten after `ready`.
-export async function POST(req: NextRequest) {
+async function handlePost(req: NextRequest) {
   const deviceId = req.headers.get(DEVICE_HEADER);
   if (!deviceId)
     return jsonError("Missing device header", 400, "invalid_device");
@@ -43,13 +46,13 @@ export async function POST(req: NextRequest) {
 
   const row = await getRecording(slug);
   if (!row) return jsonError("Recording not found", 404, "not_found");
-  if (row.deviceId !== deviceId)
+  if (!(await canMutateResource(req, row)))
     return jsonError("Forbidden", 403, "forbidden");
   if (row.state === "failed") {
     return jsonError("Recording is failed", 409, "wrong_state");
   }
 
-  const buffer = await req.arrayBuffer();
+  const buffer = await readBoundedBody(req, 16 * 1024 * 1024);
   if (buffer.byteLength === 0) {
     return jsonError("Missing body", 400, "no_body");
   }
@@ -75,3 +78,5 @@ export async function POST(req: NextRequest) {
     }),
   );
 }
+
+export const POST = withStorageErrors(handlePost);

@@ -83,6 +83,12 @@ export default async function RootLayout({
         <div hidden dangerouslySetInnerHTML={{ __html: THEME_INIT_HTML }} />
         <AnalyticsProvider />
         {children}
+        <a
+          href="https://github.com/scrummitch/captureflow"
+          className="fixed bottom-2 right-3 text-xs text-fg-muted"
+        >
+          Fork source
+        </a>
       </body>
     </html>
   );

@@ -11,8 +11,11 @@ import type { WebSession } from "@/lib/auth/sync";
  */
 const MATCHES =
   import.meta.env.MODE !== "production"
-    ? ["https://captureflow.dev/*", "http://localhost/*"]
-    : ["https://captureflow.dev/*"];
+    ? [
+        "https://captureflow-private.flindev.workers.dev/*",
+        "http://localhost/*",
+      ]
+    : ["https://captureflow-private.flindev.workers.dev/*"];
 
 /*
  * The dashboard reads this off <html> to decide whether its record buttons can

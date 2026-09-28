@@ -64,7 +64,7 @@ export async function GET(req: Request) {
       .all<{ id: string; title: string | null; created_at: number }>(),
   ]);
 
-  const CDN = env.R2_PUBLIC_BASE_URL ?? R2_PUBLIC_BASE_URL;
+  const CDN = R2_PUBLIC_BASE_URL;
 
   const recordingHits: SearchHit[] = (recordings.results ?? []).map((r) => ({
     kind: "recording",

@@ -35,8 +35,7 @@ export function WorkspaceLogoForm({
       <div className="flex min-w-60 flex-1 flex-col gap-1">
         <Typography weight="semibold">Workspace logo</Typography>
         <Typography type="body-xs" color="muted">
-          Shown next to your workspace name. PNG, JPEG, WebP, GIF, or SVG. Max 2
-          MB.
+          Shown next to your workspace name. PNG, JPEG, WebP, or GIF. Max 2 MB.
         </Typography>
       </div>
       <div className="flex w-full max-w-96 items-center gap-4">
@@ -53,7 +52,7 @@ export function WorkspaceLogoForm({
                 ref={fileRef}
                 type="file"
                 name="logo"
-                accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+                accept="image/png,image/jpeg,image/webp,image/gif"
                 className="hidden"
                 onChange={submitOnChange}
               />

@@ -1,3 +1,5 @@
+import { withStorageErrors } from "@/lib/storage-budget";
+import { readBoundedBody } from "@/lib/storage-budget";
 import { NextRequest, NextResponse } from "next/server";
 import { ACCOUNT_LIMITS } from "@captureflow/quota";
 import { generateScreenshotId } from "@/lib/screenshot/id";
@@ -54,7 +56,7 @@ export function OPTIONS() {
   return optionsResponse();
 }
 
-export async function POST(req: NextRequest) {
+async function handlePost(req: NextRequest) {
   const deviceId = req.headers.get(DEVICE_HEADER);
   if (!deviceId || deviceId.length < 8 || deviceId.length > 64) {
     return jsonError("Missing or invalid device header", 400, "invalid_device");
@@ -163,7 +165,10 @@ export async function POST(req: NextRequest) {
   if (isMultipart) {
     let form: FormData;
     try {
-      form = await req.formData();
+      const bytes = await readBoundedBody(req, 32 * 1024 * 1024);
+      form = await new Response(bytes, {
+        headers: { "content-type": contentType },
+      }).formData();
     } catch (err) {
       console.error("[screenshot] failed to parse multipart upload:", err);
       return jsonError("Malformed multipart body", 400, "invalid_multipart");
@@ -182,7 +187,10 @@ export async function POST(req: NextRequest) {
       stateBody = await stateField.arrayBuffer();
     }
   } else {
-    composedBody = await req.arrayBuffer();
+    composedBody = await readBoundedBody(
+      req,
+      ACCOUNT_LIMITS.perScreenshotSizeBytes,
+    );
   }
 
   if (composedBody.byteLength === 0) {
@@ -206,6 +214,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  if (stateBody && stateBody.byteLength > 1024 * 1024)
+    return jsonError("Edit state too large", 413, "size_exceeded");
   const id = generateScreenshotId();
   await putScreenshot(id, composedBody);
   /*
@@ -245,7 +255,10 @@ export async function POST(req: NextRequest) {
       workspaceId,
       deviceId,
       storageKey: screenshotStorageKey(id),
-      sizeBytes: composedBody.byteLength,
+      sizeBytes:
+        composedBody.byteLength +
+        (sourceBody?.byteLength ?? 0) +
+        (stateBody?.byteLength ?? 0),
       width: Math.round(width),
       height: Math.round(height),
       title,
@@ -255,8 +268,7 @@ export async function POST(req: NextRequest) {
        * public link is never minted; owners can still flip individual screenshots to
        * 'public' later from the dashboard.
        */
-      visibility:
-        workspace && !workspace.allow_public_links ? "workspace" : "public",
+      visibility: "private",
       createdAt: now,
       updatedAt: now,
       editedAt: null,
@@ -281,3 +293,5 @@ export async function POST(req: NextRequest) {
   };
   return withCors(NextResponse.json(res));
 }
+
+export const POST = withStorageErrors(handlePost);

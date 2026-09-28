@@ -1,3 +1,4 @@
+import { canReadResource, canMutateResource } from "@/lib/resource-access";
 import { NextRequest, NextResponse } from "next/server";
 import { getRecording } from "@/lib/recording/db";
 import { isValidSlug } from "@/lib/recording/slug";
@@ -18,7 +19,10 @@ export async function GET(req: NextRequest) {
     return withCors(NextResponse.json(body, { status: 400 }));
   }
   const row = await getRecording(slug);
-  if (!row) {
+  if (
+    !row ||
+    (!(await canReadResource(req, row)) && !(await canMutateResource(req, row)))
+  ) {
     // Don't 404 the probe — the loader needs a stable "still being created vs gone" answer.
     return withCors(NextResponse.json({ state: "missing" as const }));
   }

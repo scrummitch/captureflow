@@ -1,3 +1,4 @@
+import { canReadResource } from "@/lib/resource-access";
 import { NextRequest, NextResponse } from "next/server";
 import { getRecording } from "@/lib/recording/db";
 import { isValidSlug } from "@/lib/recording/slug";
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
   }
 
   const row = await getRecording(slug);
-  if (!row || row.state !== "ready" || row.visibility === "private") {
+  if (!row || row.state !== "ready" || !(await canReadResource(req, row))) {
     return notFoundJson("Recording not found", "not_found");
   }
 

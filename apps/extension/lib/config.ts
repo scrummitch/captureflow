@@ -8,5 +8,5 @@
 export const WEB_BASE =
   import.meta.env.WXT_WEB_BASE ??
   (import.meta.env.MODE === "production"
-    ? "https://captureflow.dev"
+    ? "https://captureflow-private.flindev.workers.dev"
     : "http://localhost:3032");

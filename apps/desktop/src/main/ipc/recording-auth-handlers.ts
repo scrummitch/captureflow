@@ -12,7 +12,7 @@ import {
   signInToRecordingAccount,
 } from "../lib/recording/recording-account-actions";
 import {
-  clearRecordingAuth,
+  signOutRecordingAuth,
   getRecordingAuthState,
   onRecordingAuthChange,
 } from "../lib/recording/recording-auth";
@@ -47,7 +47,7 @@ export function registerRecordingAuthHandlers(): void {
   ipcMain.handle(
     IPC_CHANNELS.RECORDING_AUTH_SIGN_OUT,
     async (): Promise<RecordingAuthState> => {
-      return clearRecordingAuth();
+      return signOutRecordingAuth();
     },
   );
 

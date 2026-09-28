@@ -1,3 +1,4 @@
+import { canMutateResource, canPublishResource } from "@/lib/resource-access";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { getRecording, updateRecording } from "@/lib/recording/db";
@@ -37,17 +38,15 @@ export async function POST(req: NextRequest) {
   const row = await getRecording(slug);
   if (!row) return jsonError("Recording not found", 404, "not_found");
 
-  const deviceId = req.headers.get(DEVICE_HEADER);
-  let authorized = false;
-  if (deviceId) {
-    authorized = row.deviceId === deviceId;
-  } else {
-    const cookieHeader = (await headers()).get("cookie");
-    const session = await verifySessionOrNull(cookieHeader);
-    authorized = !!session && session.userId === row.userId;
-  }
+  const authorized = await canMutateResource(req, row);
   if (!authorized) return jsonError("Forbidden", 403, "forbidden");
 
+  if (value === "public" && !(await canPublishResource(row.workspaceId)))
+    return jsonError(
+      "Public links disabled for this workspace",
+      403,
+      "forbidden",
+    );
   await updateRecording(slug, { visibility: value as RecordingVisibility });
   return withCors(NextResponse.json({ visibility: value }));
 }

@@ -1,3 +1,5 @@
+> **This fork:** use [SELF_HOSTING.md](SELF_HOSTING.md). The upstream instructions below describe a public-bucket deployment and must not be used for this private installation.
+
 # Deploying CaptureFlow
 
 This is a turnkey, ordered runbook for provisioning and deploying the

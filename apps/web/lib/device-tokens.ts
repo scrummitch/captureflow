@@ -89,14 +89,24 @@ export async function resolveDeviceToken(
   const tokenHash = await hashToken(rawToken);
   const row = await db
     .prepare(
-      `SELECT id, user_id, revoked_at
+      `SELECT id, user_id, revoked_at, created_at
          FROM device_tokens
          WHERE token_hash = ?1
          LIMIT 1`,
     )
     .bind(tokenHash)
-    .first<{ id: string; user_id: string; revoked_at: number | null }>();
-  if (!row || row.revoked_at !== null) return null;
+    .first<{
+      id: string;
+      user_id: string;
+      revoked_at: number | null;
+      created_at: number;
+    }>();
+  if (
+    !row ||
+    row.revoked_at !== null ||
+    row.created_at + 30 * 24 * 60 * 60 * 1000 <= Date.now()
+  )
+    return null;
   await db
     .prepare(`UPDATE device_tokens SET last_used_at = ?2 WHERE id = ?1`)
     .bind(row.id, Date.now())

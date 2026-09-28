@@ -1,3 +1,4 @@
+import { canReadResource } from "@/lib/resource-access";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import {
@@ -28,19 +29,33 @@ export async function GET(req: NextRequest) {
   if (!isValidSlug(slug)) {
     return jsonError("Invalid slug", 400, "invalid_slug");
   }
+  const recording = await getRecording(slug);
+  if (
+    !recording ||
+    recording.state !== "ready" ||
+    !(await canReadResource(req, recording))
+  ) {
+    return jsonError("Recording not found", 404, "not_found");
+  }
   const reactions = await listReactions(slug);
   const body: ListReactionsResponse = { reactions };
   return withCors(NextResponse.json(body));
 }
 
 export async function POST(req: NextRequest) {
+  if (req.headers.get("origin") !== req.nextUrl.origin)
+    return jsonError("Forbidden", 403, "forbidden");
   const slug = req.nextUrl.searchParams.get("slug");
   if (!isValidSlug(slug)) {
     return jsonError("Invalid slug", 400, "invalid_slug");
   }
 
   const recording = await getRecording(slug);
-  if (!recording || recording.state !== "ready") {
+  if (
+    !recording ||
+    recording.state !== "ready" ||
+    !(await canReadResource(req, recording))
+  ) {
     return jsonError("Recording not found", 404, "not_found");
   }
 

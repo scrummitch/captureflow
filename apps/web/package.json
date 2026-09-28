@@ -14,27 +14,27 @@
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "cf:typegen": "wrangler types --env-interface CloudflareEnv ./cloudflare-env.d.ts",
+    "cf:typegen": "wrangler types --include-runtime false --env-interface CloudflareEnv ./cloudflare-env.d.ts",
     "db:seed:local": "wrangler d1 execute captureflow --local --file=./db/schema.snapshot.sql",
     "db:apply": "wrangler d1 migrations apply captureflow",
     "db:apply:remote": "wrangler d1 migrations apply captureflow --remote"
   },
   "dependencies": {
-    "@better-auth/drizzle-adapter": "1.6.10",
+    "@better-auth/drizzle-adapter": "1.7.6",
     "@captureflow/quota": "workspace:*",
     "@captureflow/shared": "workspace:*",
     "@captureflow/ui": "workspace:*",
     "@heroui/react": "^3.2.3",
     "@heroui/styles": "^3.2.3",
-    "@opennextjs/cloudflare": "^1.19.0",
-    "better-auth": "1.6.10",
+    "@opennextjs/cloudflare": "1.20.6",
+    "better-auth": "1.7.6",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.36.0",
     "emoji-picker-react": "^4.19.1",
     "konva": "^10.3.0",
     "lucide-react": "^1.14.0",
     "motion": "^12.38.0",
-    "next": "^16.2.0",
+    "next": "16.3.6",
     "posthog-js": "^1.386.0",
     "react": "catalog:",
     "react-dom": "catalog:",
@@ -52,6 +52,6 @@
     "tailwindcss": "^4",
     "typescript": "catalog:",
     "vitest": "^4.1.9",
-    "wrangler": "^4.40.0"
+    "wrangler": "4.142.0"
   }
 }

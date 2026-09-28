@@ -1,3 +1,4 @@
+import identity from "./public-key.json";
 import { defineConfig } from "wxt";
 import tailwindcss from "@tailwindcss/vite";
 
@@ -19,8 +20,11 @@ export default defineConfig({
      * would let any localhost page reach the external-message surface.
      */
     const matches = isDev
-      ? ["https://captureflow.dev/*", "http://localhost/*"]
-      : ["https://captureflow.dev/*"];
+      ? [
+          "https://captureflow-private.flindev.workers.dev/*",
+          "http://localhost/*",
+        ]
+      : ["https://captureflow-private.flindev.workers.dev/*"];
     /*
      * Chrome derives the extension id from this key, so a dev build carrying it
      * loads under the Web Store id and *replaces* an installed CaptureFlow.
@@ -33,8 +37,7 @@ export default defineConfig({
      * wouldn't work — WXT reloads it from .env.local over anything the shell
      * sets).
      */
-    const key =
-      isDev || process.env.WXT_NO_KEY ? undefined : process.env.WXT_EXT_KEY;
+    const key = identity.key;
     // Amber plate instead of the blue one, so the dev build is obvious in the
     // toolbar when both are installed.
     const icons = isDev
@@ -50,9 +53,7 @@ export default defineConfig({
       ...(icons ? { icons } : {}),
       // Chrome Web Store ranks the name field heaviest and caps it at 75 chars;
       // description is the store summary, capped at 132.
-      name: isDev
-        ? "CaptureFlow (dev)"
-        : "CaptureFlow Screen Recorder & Screen Capture",
+      name: isDev ? "CaptureFlow (dev)" : "CaptureFlow Private — Flindev",
       description:
         "Open-source screen recorder and screenshot tool. Record your screen or tab, get an instant shareable link, and send it in seconds.",
       // Without this the toolbar tooltip inherits the keyword-laden store name.

@@ -1,3 +1,6 @@
+import { withStorageErrors } from "@/lib/storage-budget";
+import { readBoundedBody } from "@/lib/storage-budget";
+import { canMutateResource } from "@/lib/resource-access";
 import { NextRequest, NextResponse } from "next/server";
 import { getRecording } from "@/lib/recording/db";
 import { isValidSlug } from "@/lib/recording/slug";
@@ -7,13 +10,13 @@ import type { PartResponse } from "@/lib/recording/types";
 
 const DEVICE_HEADER = "x-captureflow-device";
 const MAX_PART_NUMBER = 10000;
-const MAX_PART_BYTES = 100 * 1024 * 1024;
+const MAX_PART_BYTES = 16 * 1024 * 1024;
 
 export function OPTIONS() {
   return optionsResponse();
 }
 
-export async function POST(req: NextRequest) {
+async function handlePost(req: NextRequest) {
   const deviceId = req.headers.get(DEVICE_HEADER);
   if (!deviceId)
     return jsonError("Missing device header", 400, "invalid_device");
@@ -34,7 +37,7 @@ export async function POST(req: NextRequest) {
 
   const row = await getRecording(slug);
   if (!row) return jsonError("Recording not found", 404, "not_found");
-  if (row.deviceId !== deviceId)
+  if (!(await canMutateResource(req, row)))
     return jsonError("Forbidden", 403, "forbidden");
   if (row.webcamState !== "pending") {
     return jsonError("Webcam is not pending", 409, "wrong_state");
@@ -49,7 +52,7 @@ export async function POST(req: NextRequest) {
     return jsonError("Chunk too large", 413, "chunk_too_large");
   }
 
-  const buffer = await req.arrayBuffer();
+  const buffer = await readBoundedBody(req, 16 * 1024 * 1024);
   if (buffer.byteLength === 0) {
     return jsonError("Missing chunk body", 400, "no_body");
   }
@@ -67,3 +70,5 @@ export async function POST(req: NextRequest) {
   };
   return withCors(NextResponse.json(res));
 }
+
+export const POST = withStorageErrors(handlePost);

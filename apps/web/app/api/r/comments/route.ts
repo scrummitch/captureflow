@@ -1,3 +1,4 @@
+import { canReadResource } from "@/lib/resource-access";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import {
@@ -22,11 +23,19 @@ export function OPTIONS() {
 const MAX_COMMENT_LENGTH = 1000;
 const MAX_COMMENTS_PER_RECORDING = 1000;
 
-// Reads are open; visibility is enforced upstream at /[slug].
+// Every API enforces the same policy as the viewer.
 export async function GET(req: NextRequest) {
   const slug = req.nextUrl.searchParams.get("slug");
   if (!isValidSlug(slug)) {
     return jsonError("Invalid slug", 400, "invalid_slug");
+  }
+  const recording = await getRecording(slug);
+  if (
+    !recording ||
+    recording.state !== "ready" ||
+    !(await canReadResource(req, recording))
+  ) {
+    return jsonError("Recording not found", 404, "not_found");
   }
   const comments = await listComments(slug);
   const body: ListCommentsResponse = { comments };
@@ -36,13 +45,19 @@ export async function GET(req: NextRequest) {
 // The display name is captured at write time so a later rename doesn't
 // rewrite history.
 export async function POST(req: NextRequest) {
+  if (req.headers.get("origin") !== req.nextUrl.origin)
+    return jsonError("Forbidden", 403, "forbidden");
   const slug = req.nextUrl.searchParams.get("slug");
   if (!isValidSlug(slug)) {
     return jsonError("Invalid slug", 400, "invalid_slug");
   }
 
   const recording = await getRecording(slug);
-  if (!recording || recording.state !== "ready") {
+  if (
+    !recording ||
+    recording.state !== "ready" ||
+    !(await canReadResource(req, recording))
+  ) {
     return jsonError("Recording not found", 404, "not_found");
   }
 

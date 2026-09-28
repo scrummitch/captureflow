@@ -1,3 +1,4 @@
+import { withStorageErrors } from "@/lib/storage-budget";
 import { NextRequest, NextResponse } from "next/server";
 import {
   ALLOWED_CONTENT_TYPES,
@@ -40,7 +41,7 @@ export function OPTIONS() {
   return optionsResponse();
 }
 
-export async function POST(req: NextRequest) {
+async function handlePost(req: NextRequest) {
   const deviceId = req.headers.get(DEVICE_HEADER);
   if (!deviceId || deviceId.length < 8 || deviceId.length > 64) {
     return jsonError("Missing or invalid device header", 400, "invalid_device");
@@ -169,7 +170,9 @@ export async function POST(req: NextRequest) {
       ? "private"
       : body.visibility === "workspace"
         ? "workspace"
-        : "public";
+        : body.visibility === "public"
+          ? "public"
+          : "private";
   if (workspace && !workspace.allow_public_links && visibility === "public") {
     visibility = "workspace";
   }
@@ -215,3 +218,5 @@ export async function POST(req: NextRequest) {
 function numberOrNull(v: unknown): number | null {
   return typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : null;
 }
+
+export const POST = withStorageErrors(handlePost);

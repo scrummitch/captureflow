@@ -16,7 +16,8 @@ export default async function LoginPage({
   const sp = await searchParams;
   const next = sp.next ?? "/recordings";
   // Only same-origin path redirects — strip a forged "?next=https://evil".
-  const safeNext = next.startsWith("/") ? next : "/recordings";
+  const safeNext =
+    next.startsWith("/") && !next.startsWith("//") ? next : "/recordings";
   const session = await loadSession();
   if (session) redirect(safeNext);
 

@@ -1,3 +1,7 @@
+# Private Cloudflare fork
+
+This is the hardened Flindev deployment. See [SELF_HOSTING.md](SELF_HOSTING.md) for setup, recorder downloads, security changes and validation limits. The original project documentation follows.
+
 <div align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/brand-mark-light.svg" />

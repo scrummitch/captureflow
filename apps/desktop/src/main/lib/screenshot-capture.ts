@@ -4,7 +4,7 @@ import { copyFile, mkdir, readFile, unlink } from "fs/promises";
 import { tmpdir } from "os";
 import { homedir } from "os";
 import { join } from "path";
-import { clipboard, nativeImage, shell } from "electron";
+import { clipboard, ClipboardItem, shell } from "electron";
 import {
   captureSnapshotPng,
   type SnapshotConfig,
@@ -99,8 +99,11 @@ export async function captureSnapshot(
 
   try {
     const buf = await readFile(result.path);
-    const img = nativeImage.createFromBuffer(buf);
-    clipboard.writeImage(img);
+    await clipboard.write([
+      new ClipboardItem({
+        "image/png": new Blob([new Uint8Array(buf)], { type: "image/png" }),
+      }),
+    ]);
   } catch (err) {
     logWarn("screenshot-capture", `clipboard write failed: ${String(err)}`);
   }

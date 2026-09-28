@@ -1,4 +1,4 @@
-appId: software.captureflow
+appId: com.flindev.captureflow
 productName: CaptureFlow
 directories:
   buildResources: build
@@ -11,7 +11,7 @@ directories:
 # (electron-updater's default, vPrefixedTagName) — e.g. v0.1.0.
 publish:
   provider: github
-  owner: sardorml
+  owner: scrummitch
   repo: captureflow
 files:
   - '!**/.vscode/*'

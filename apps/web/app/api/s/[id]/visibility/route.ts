@@ -1,3 +1,4 @@
+import { canPublishResource } from "@/lib/resource-access";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { getScreenshot, updateScreenshotVisibility } from "@/lib/screenshot/db";
@@ -16,6 +17,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if (req.headers.get("origin") !== req.nextUrl.origin)
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const { id } = await params;
   if (!isValidScreenshotId(id)) {
     return withCors(
@@ -59,6 +62,11 @@ export async function POST(
     );
   }
 
+  if (value === "public" && !(await canPublishResource(screenshot.workspaceId)))
+    return NextResponse.json(
+      { error: "Public links disabled for this workspace" },
+      { status: 403 },
+    );
   await updateScreenshotVisibility(id, value);
   return withCors(NextResponse.json({ ok: true, visibility: value }));
 }

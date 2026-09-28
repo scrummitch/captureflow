@@ -4,6 +4,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 export type AppWebBindings = {
   DB?: D1Database;
+  STORAGE_LIMIT_BYTES?: string;
   BUCKET?: R2Bucket;
   NEXT_PUBLIC_APP_WEB_SITE_URL?: string;
   NEXT_PUBLIC_RECORDING_SITE_URL?: string;

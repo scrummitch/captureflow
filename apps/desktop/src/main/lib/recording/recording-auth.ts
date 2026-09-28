@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import { app } from "electron";
+import { app, safeStorage } from "electron";
 import { join } from "path";
 import { readFile, writeFile, mkdir, rm } from "fs/promises";
 import type { RecordingAuthState } from "../../../shared/types";
@@ -9,7 +9,7 @@ import { setRecordingConnectivity } from "./recording-connectivity";
 // The raw token is the recording-API credential — keep it out of logs and never
 // round-trip it to the renderer.
 
-const FILE_NAME = "recording-auth.json";
+const FILE_NAME = "recording-auth.encrypted";
 
 type StoredAuth = {
   token: string;
@@ -47,7 +47,12 @@ export function getRecordingAuthToken(): string | null {
 
 export async function loadRecordingAuth(): Promise<RecordingAuthState> {
   try {
-    const raw = await readFile(filePath(), "utf-8");
+    // Old plaintext credentials are discarded; a fresh sign-in rotates them.
+    await rm(join(app.getPath("userData"), "recording-auth.json"), {
+      force: true,
+    });
+    if (!safeStorage.isEncryptionAvailable()) return stateFromStored(null);
+    const raw = safeStorage.decryptString(await readFile(filePath()));
     const parsed = JSON.parse(raw) as Partial<StoredAuth>;
     if (
       typeof parsed.token === "string" &&
@@ -87,10 +92,21 @@ export async function setRecordingAuth(input: {
     label: input.label ?? null,
     email: input.email ?? null,
   };
+  if (!safeStorage.isEncryptionAvailable())
+    throw new Error("Secure credential storage unavailable");
+  if (
+    process.platform === "linux" &&
+    safeStorage.getSelectedStorageBackend() === "basic_text"
+  )
+    throw new Error("Secure keyring required");
   cached = next;
   try {
     await mkdir(app.getPath("userData"), { recursive: true });
-    await writeFile(filePath(), JSON.stringify(next), "utf-8");
+    await writeFile(
+      filePath(),
+      safeStorage.encryptString(JSON.stringify(next)),
+      { mode: 0o600 },
+    );
     logInfo("recording-auth", `saved session (tokenId=${next.tokenId})`);
   } catch (err) {
     logWarn("recording-auth", `failed to persist session: ${String(err)}`);
@@ -103,7 +119,8 @@ export async function setRecordingAuth(input: {
 // Runs even with no token cached, purely to track connectivity. Network errors
 // never sign the user out — only an explicit 401 from the worker clears the auth.
 const AUTH_CHECK_BASE =
-  process.env.CAPTUREFLOW_RECORDING_API_BASE ?? "https://captureflow.dev/api/r";
+  process.env.CAPTUREFLOW_RECORDING_API_BASE ??
+  "https://captureflow-private.flindev.workers.dev/api/r";
 const AUTH_CHECK_TIMEOUT_MS = 8_000;
 
 export async function validateRecordingAuth(): Promise<RecordingAuthState> {
@@ -136,6 +153,22 @@ export async function validateRecordingAuth(): Promise<RecordingAuthState> {
     setRecordingConnectivity("offline");
   }
   return stateFromStored(cached);
+}
+
+export async function signOutRecordingAuth(): Promise<RecordingAuthState> {
+  const token = cached?.token;
+  if (token) {
+    const response = await fetch(`${AUTH_CHECK_BASE}/auth/revoke`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(AUTH_CHECK_TIMEOUT_MS),
+    });
+    if (!response.ok && response.status !== 401)
+      throw new Error(
+        "Could not revoke session; try signing out again when connected.",
+      );
+  }
+  return clearRecordingAuth();
 }
 
 export async function clearRecordingAuth(): Promise<RecordingAuthState> {

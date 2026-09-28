@@ -16,6 +16,7 @@ import { authSchema } from "./auth-schema";
 
 type AppWebEnv = {
   DB: D1Database;
+  ALLOW_REGISTRATION?: string;
   BETTER_AUTH_SECRET?: string;
   BETTER_AUTH_URL?: string;
   // Comma-separated extra origins accepted for POSTs, beyond baseURL's own.
@@ -73,6 +74,7 @@ function buildAuth(env: AppWebEnv | null, baseURL?: string) {
       autoSignIn: true,
       minPasswordLength: 12,
     },
+    account: { accountLinking: { enabled: false } },
     socialProviders,
     session: {
       expiresIn: 60 * 60 * 24 * 30,
@@ -83,6 +85,8 @@ function buildAuth(env: AppWebEnv | null, baseURL?: string) {
     databaseHooks: {
       user: {
         create: {
+          before: async () =>
+            env?.ALLOW_REGISTRATION === "true" ? undefined : false,
           // Best-effort: never block sign-up on failure (user row is committed).
           after: async (user) => {
             if (!env?.DB) return;
@@ -98,7 +102,7 @@ function buildAuth(env: AppWebEnv | null, baseURL?: string) {
             }
             try {
               const email = typeof user.email === "string" ? user.email : null;
-              if (email) {
+              if (email && user.emailVerified) {
                 const unclaimed = await getUnclaimedProSubscriptionByEmail(
                   db,
                   email,
@@ -130,5 +134,3 @@ export async function getAuth(): Promise<AuthInstance> {
   const baseURL = env?.BETTER_AUTH_URL;
   return buildAuth(env, baseURL);
 }
-
-export const auth = buildAuth(null);

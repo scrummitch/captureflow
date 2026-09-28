@@ -1,3 +1,4 @@
+import { canMutateResource } from "@/lib/resource-access";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { deleteRecording, getRecording } from "@/lib/recording/db";
@@ -24,15 +25,7 @@ export async function DELETE(
   const row = await getRecording(id);
   if (!row) return withCors(NextResponse.json({ ok: true }));
 
-  const deviceId = req.headers.get(DEVICE_HEADER);
-  let authorized = false;
-  if (deviceId) {
-    authorized = row.deviceId === deviceId;
-  } else {
-    const cookieHeader = (await headers()).get("cookie");
-    const session = await verifySessionOrNull(cookieHeader);
-    authorized = !!session && session.userId === row.userId;
-  }
+  const authorized = await canMutateResource(req, row);
   if (!authorized) return jsonError("Forbidden", 403, "forbidden");
 
   if (row.uploadId) {

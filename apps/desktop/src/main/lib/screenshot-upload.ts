@@ -15,7 +15,7 @@ import { bakeScreenshotWithDefaultBackground } from "./screenshot-bake";
 
 const SCREENSHOT_API_BASE =
   process.env.CAPTUREFLOW_SCREENSHOT_API_BASE ??
-  "https://captureflow.dev/api/s";
+  "https://captureflow-private.flindev.workers.dev/api/s";
 
 export type ScreenshotUploadOk = {
   ok: true;

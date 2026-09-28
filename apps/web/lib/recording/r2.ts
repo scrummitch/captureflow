@@ -1,3 +1,4 @@
+import { reserveStorage, releaseStorage } from "@/lib/storage-budget";
 /// <reference types="@cloudflare/workers-types" />
 
 import { R2_PUBLIC_BASE_URL } from "@/lib/site";
@@ -47,6 +48,12 @@ export async function uploadPart(
 ): Promise<R2UploadedPart> {
   const bucket = await getBucket();
   const upload = bucket.resumeMultipartUpload(storageKey, uploadId);
+  if (!(body instanceof ArrayBuffer))
+    throw new Error("Upload body must be bounded");
+  await reserveStorage(
+    `${storageKey}#${uploadId}/${partNumber}`,
+    body.byteLength,
+  );
   const result = await upload.uploadPart(partNumber, body);
   return { partNumber, etag: result.etag };
 }
@@ -73,6 +80,7 @@ export async function abortMultipartUpload(
 export async function deleteObject(storageKey: string): Promise<void> {
   const bucket = await getBucket();
   await bucket.delete(storageKey);
+  await releaseStorage(storageKey);
 }
 
 export async function putObject(
@@ -82,6 +90,7 @@ export async function putObject(
   cacheControl?: string,
 ): Promise<void> {
   const bucket = await getBucket();
+  await reserveStorage(storageKey, body.byteLength);
   await bucket.put(storageKey, body, {
     httpMetadata: cacheControl
       ? { contentType, cacheControl }
@@ -89,10 +98,10 @@ export async function putObject(
   });
 }
 
-export async function headObject(storageKey: string): Promise<boolean> {
+export async function headObject(storageKey: string): Promise<R2Object | null> {
   const bucket = await getBucket();
   const head = await bucket.head(storageKey);
-  return head !== null;
+  return head;
 }
 
 export async function putObjectJson<T>(
@@ -100,7 +109,12 @@ export async function putObjectJson<T>(
   value: T,
 ): Promise<void> {
   const bucket = await getBucket();
-  await bucket.put(storageKey, JSON.stringify(value), {
+  const serialized = JSON.stringify(value);
+  await reserveStorage(
+    storageKey,
+    new TextEncoder().encode(serialized).byteLength,
+  );
+  await bucket.put(storageKey, serialized, {
     httpMetadata: {
       contentType: "application/json; charset=utf-8",
       cacheControl: "no-store",
@@ -121,7 +135,5 @@ export async function getObjectJson<T>(storageKey: string): Promise<T | null> {
 }
 
 export async function publicUrlFor(storageKey: string): Promise<string> {
-  const env = await getCloudflareEnv();
-  const base = env?.R2_PUBLIC_BASE_URL ?? R2_PUBLIC_BASE_URL;
-  return `${base}/${storageKey}`;
+  return `/api/r/media/${storageKey.split("/").map(encodeURIComponent).join("/")}`;
 }

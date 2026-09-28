@@ -1,3 +1,4 @@
+import { canReadResource } from "@/lib/resource-access";
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { getRecording } from "@/lib/recording/db";
@@ -14,13 +15,13 @@ export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ id: string }> };
 
-export async function GET(_req: Request, { params }: Params) {
+export async function GET(req: Request, { params }: Params) {
   const { id } = await params;
   if (!isValidSlug(id)) {
     return NextResponse.json({ error: "invalid_slug" }, { status: 400 });
   }
   const row = await getRecording(id);
-  if (!row || row.state !== "ready") {
+  if (!row || row.state !== "ready" || !(await canReadResource(req, row))) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
   const payload = await loadSummaryChapters(row.storageKey);
@@ -28,12 +29,14 @@ export async function GET(_req: Request, { params }: Params) {
 }
 
 export async function PUT(req: Request, { params }: Params) {
+  if (req.headers.get("origin") !== new URL(req.url).origin)
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
   const { id } = await params;
   if (!isValidSlug(id)) {
     return NextResponse.json({ error: "invalid_slug" }, { status: 400 });
   }
   const row = await getRecording(id);
-  if (!row || row.state !== "ready") {
+  if (!row || row.state !== "ready" || !(await canReadResource(req, row))) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
   const cookieHeader = (await headers()).get("cookie");

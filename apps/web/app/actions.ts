@@ -1,5 +1,8 @@
 "use server";
 
+import { getScreenshot } from "@/lib/screenshot/db";
+import { canPublishResource } from "@/lib/resource-access";
+
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -87,6 +90,13 @@ export async function setVisibilityAction(
   ) {
     return { error: "Invalid visibility" };
   }
+  const resource = await getRecordingForUser(userId, cleanSlug);
+  if (!resource) return { error: "Recording not found" };
+  if (
+    visibility === "public" &&
+    !(await canPublishResource(resource.workspaceId))
+  )
+    return { error: "Public links disabled for this workspace" };
   const ok = await updateRecordingVisibilityForAdmin(
     userId,
     cleanSlug,
@@ -210,6 +220,15 @@ export async function setScreenshotVisibilityAction(
   ) {
     return { error: "Invalid visibility" };
   }
+  const resource = await getScreenshotForUser(cleanId, userId);
+  if (!resource) return { error: "Screenshot not found" };
+  if (
+    visibility === "public" &&
+    !(await canPublishResource(
+      (await getScreenshot(cleanId))?.workspaceId ?? null,
+    ))
+  )
+    return { error: "Public links disabled for this workspace" };
   const ok = await updateScreenshotVisibilityForAdmin(
     userId,
     cleanId,

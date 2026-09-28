@@ -1,3 +1,4 @@
+import { canReadResource } from "@/lib/resource-access";
 import { NextRequest, NextResponse } from "next/server";
 import { getScreenshot } from "@/lib/screenshot/db";
 import { getScreenshotBody } from "@/lib/screenshot/r2";
@@ -17,7 +18,7 @@ export async function GET(req: NextRequest) {
   }
 
   const row = await getScreenshot(id);
-  if (!row || row.state !== "ready") {
+  if (!row || row.state !== "ready" || !(await canReadResource(req, row))) {
     return notFoundJson("Screenshot not found", "not_found");
   }
 

@@ -28,14 +28,7 @@ export function AuthShell({
       </div>
 
       <footer className="text-fg-muted text-[13px]">
-        By continuing, you agree to CaptureFlow&rsquo;s{" "}
-        <Link href="/terms" className="text-fg font-medium hover:underline">
-          Terms
-        </Link>{" "}
-        and{" "}
-        <Link href="/privacy" className="text-fg font-medium hover:underline">
-          Privacy
-        </Link>
+        Hosted on your Cloudflare account.
       </footer>
     </main>
   );

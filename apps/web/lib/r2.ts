@@ -1,3 +1,4 @@
+import { reserveStorage, releaseStorage } from "@/lib/storage-budget";
 /// <reference types="@cloudflare/workers-types" />
 
 import { getAppWebEnv } from "./cf-env";
@@ -15,6 +16,7 @@ async function getBucket(): Promise<R2Bucket> {
 export async function deleteObject(key: string): Promise<void> {
   const bucket = await getBucket();
   await bucket.delete(key);
+  await releaseStorage(key);
 }
 
 export async function putObject(
@@ -24,6 +26,7 @@ export async function putObject(
   cacheControl = "no-cache",
 ): Promise<void> {
   const bucket = await getBucket();
+  await reserveStorage(key, body.byteLength);
   await bucket.put(key, body, {
     httpMetadata: { contentType, cacheControl },
   });

@@ -36,19 +36,6 @@ export async function TopBar() {
       {/* ml-auto because below md the search slot is display:none, which leaves
           justify-between a single child to push around. */}
       <div className="ml-auto flex items-center gap-2">
-        {!isPro && (
-          <UpgradeModal
-            email={session.user.email}
-            userId={session.user.id}
-            openOnUpgradeParam
-            trigger={
-              <Button variant="primary">
-                <Sparkles size={16} />
-                Upgrade
-              </Button>
-            }
-          />
-        )}
         <NotificationsMenu />
         <UserMenu
           themePreference={themePreference}

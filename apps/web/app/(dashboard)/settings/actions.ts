@@ -63,7 +63,6 @@ const LOGO_MIME = new Map<string, string>([
   ["image/jpeg", "jpg"],
   ["image/webp", "webp"],
   ["image/gif", "gif"],
-  ["image/svg+xml", "svg"],
 ]);
 
 export async function uploadWorkspaceLogoAction(
@@ -85,7 +84,7 @@ export async function uploadWorkspaceLogoAction(
   const ext = LOGO_MIME.get(mime);
   if (!ext) {
     return {
-      error: "Logo must be PNG, JPEG, WebP, GIF, or SVG",
+      error: "Logo must be PNG, JPEG, WebP, or GIF",
       ok: null,
     };
   }

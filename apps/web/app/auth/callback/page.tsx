@@ -1,27 +1,24 @@
+import { issueLoginCode } from "@/lib/desktop-login";
 import { redirect } from "next/navigation";
 import { loadSession } from "@/lib/session-guard";
 import { issueDeviceToken } from "@/lib/device-tokens";
 import { getAppWebEnv } from "@/lib/cf-env";
 import { CallbackHandoff } from "./CallbackHandoff";
 import { ExtensionHandoff } from "./ExtensionHandoff";
-import { classifyReturn } from "./return-target";
 import { resolveExtensionTarget } from "./extension-target";
 
 export const dynamic = "force-dynamic";
 
-const DEFAULT_SCHEME = "captureflow";
-
-function buildDeepLink(scheme: string, token: string, tokenId: string): string {
-  const u = new URL(`${scheme}://auth/callback`);
-  u.searchParams.set("token", token);
-  u.searchParams.set("id", tokenId);
-  return u.toString();
-}
-
 export default async function CallbackPage({
   searchParams,
 }: {
-  searchParams: Promise<{ label?: string; return?: string; ext?: string }>;
+  searchParams: Promise<{
+    label?: string;
+    return?: string;
+    ext?: string;
+    state?: string;
+    challenge?: string;
+  }>;
 }) {
   const sp = await searchParams;
   const session = await loadSession();
@@ -30,6 +27,8 @@ export default async function CallbackPage({
     if (sp.label) params.set("label", sp.label);
     if (sp.return) params.set("return", sp.return);
     if (sp.ext) params.set("ext", sp.ext);
+    if (sp.state) params.set("state", sp.state);
+    if (sp.challenge) params.set("challenge", sp.challenge);
     const tail = params.toString();
     const next = `/auth/callback${tail ? `?${tail}` : ""}`;
     redirect(`/login?next=${encodeURIComponent(next)}`);
@@ -70,31 +69,23 @@ export default async function CallbackPage({
     );
   }
 
-  // Desktop flow: a custom-scheme deep link the OS routes to the app. ?return=
-  // is attacker-influenceable, so it's locked to the scheme; anything else falls
-  // back to the default deep link.
-  const scheme = DEFAULT_SCHEME;
-  const target = classifyReturn(sp.return, scheme);
-  const issued = await issueDeviceToken(session.user.id, label);
-  const deepLink =
-    target.kind === "deeplink"
-      ? appendTokenToReturn(target.url, issued.rawToken, issued.id)
-      : buildDeepLink(scheme, issued.rawToken, issued.id);
-
-  return <CallbackHandoff deepLink={deepLink} email={session.user.email} />;
-}
-
-function appendTokenToReturn(
-  returnUrl: string,
-  token: string,
-  tokenId: string,
-): string {
-  try {
-    const u = new URL(returnUrl);
-    u.searchParams.set("token", token);
-    u.searchParams.set("id", tokenId);
-    return u.toString();
-  } catch {
-    return buildDeepLink(DEFAULT_SCHEME, token, tokenId);
+  if (
+    !sp.state ||
+    !/^[A-Za-z0-9_-]{43}$/.test(sp.state) ||
+    !sp.challenge ||
+    !/^[A-Za-z0-9_-]{43}$/.test(sp.challenge)
+  ) {
+    return (
+      <main className="p-8">
+        Start sign-in from your CaptureFlow desktop app.
+      </main>
+    );
   }
+  const code = await issueLoginCode(session.user.id, sp.challenge, label);
+  const link = new URL("captureflow://auth/callback");
+  link.searchParams.set("code", code);
+  link.searchParams.set("state", sp.state);
+  return (
+    <CallbackHandoff deepLink={link.toString()} email={session.user.email} />
+  );
 }

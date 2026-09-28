@@ -1,37 +1,49 @@
 import { setRecordingAuth } from "./recording-auth";
-import { logInfo, logWarn } from "../logger";
-
+import { consumeRecordingLogin } from "./recording-login";
+import { logWarn } from "../logger";
+const API_BASE =
+  process.env.CAPTUREFLOW_RECORDING_API_BASE ??
+  "https://captureflow-private.flindev.workers.dev/api/r";
 export async function handleDeepLinkUrl(rawUrl: string): Promise<void> {
-  if (typeof rawUrl !== "string" || !rawUrl.startsWith("captureflow://")) {
-    return;
-  }
-  let parsed: URL;
+  let url: URL;
   try {
-    parsed = new URL(rawUrl);
+    url = new URL(rawUrl);
   } catch {
-    logWarn(
-      "recording-auth",
-      `dropped malformed deep link: ${rawUrl.slice(0, 64)}…`,
-    );
     return;
   }
-  // Custom-scheme URL parsing is OS-dependent on which segment becomes the host,
-  // so accept both auth/callback and the swapped callback/auth ordering.
-  const key = `${parsed.host}${parsed.pathname}`
-    .replace(/\/+/g, "/")
-    .replace(/^\//, "");
-  if (!key.startsWith("auth/callback") && !key.startsWith("callback/auth")) {
-    logInfo("recording-auth", `ignored non-auth deep link host=${parsed.host}`);
+  if (
+    url.protocol !== "captureflow:" ||
+    url.host !== "auth" ||
+    url.pathname !== "/callback"
+  )
     return;
+  const code = url.searchParams.get("code") ?? "";
+  if (!/^[a-f0-9]{64}$/.test(code)) return;
+  const verifier = consumeRecordingLogin(url.searchParams.get("state") ?? "");
+  if (!verifier) return;
+  try {
+    const response = await fetch(`${API_BASE}/auth/exchange`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ code, verifier }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) throw new Error("Login exchange rejected");
+    const data = (await response.json()) as {
+      rawToken?: string;
+      id?: string;
+      email?: string;
+      label?: string;
+    };
+    if (!data.rawToken || !/^[a-f0-9]{64}$/.test(data.rawToken) || !data.id)
+      throw new Error("Invalid login response");
+    await setRecordingAuth({
+      token: data.rawToken,
+      tokenId: data.id,
+      email: data.email,
+      label: data.label,
+    });
+  } catch {
+    logWarn("recording-auth", "Sign-in failed; start sign-in again.");
   }
-  const token = parsed.searchParams.get("token") ?? "";
-  const tokenId = parsed.searchParams.get("id") ?? "";
-  const label = parsed.searchParams.get("label") ?? null;
-  const email = parsed.searchParams.get("email") ?? null;
-  if (token.length < 32 || tokenId.length === 0) {
-    logWarn("recording-auth", "deep link missing token or id; rejected");
-    return;
-  }
-  await setRecordingAuth({ token, tokenId, label, email });
-  logInfo("recording-auth", `accepted token from deep link (id=${tokenId})`);
 }

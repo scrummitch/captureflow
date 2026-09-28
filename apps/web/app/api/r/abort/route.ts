@@ -1,3 +1,4 @@
+import { canMutateResource } from "@/lib/resource-access";
 import { NextRequest, NextResponse } from "next/server";
 import { getRecording, updateRecording } from "@/lib/recording/db";
 import { isValidSlug } from "@/lib/recording/slug";
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
 
   const row = await getRecording(body.slug);
   if (!row) return withCors(NextResponse.json({ ok: true }));
-  if (row.deviceId !== deviceId)
+  if (!(await canMutateResource(req, row)))
     return jsonError("Forbidden", 403, "forbidden");
 
   if (row.uploadId) {

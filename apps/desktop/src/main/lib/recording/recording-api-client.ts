@@ -2,7 +2,8 @@ import { getRecordingAuthToken } from "./recording-auth";
 
 // Override via CAPTUREFLOW_RECORDING_API_BASE for one-off staging tests.
 export const RECORDING_API_BASE =
-  process.env.CAPTUREFLOW_RECORDING_API_BASE ?? "https://captureflow.dev/api/r";
+  process.env.CAPTUREFLOW_RECORDING_API_BASE ??
+  "https://captureflow-private.flindev.workers.dev/api/r";
 
 // R2 multipart minimum part size (except the last); worker caps a part at 100 MiB.
 export const CHUNK_BYTES = 5 * 1024 * 1024;
@@ -80,11 +81,10 @@ export async function postBytes<T>(
 ): Promise<T> {
   const res = await fetch(`${RECORDING_API_BASE}${path}`, {
     method: "POST",
-    headers: {
+    headers: recordingHeaders(deviceId, {
       "content-type": "application/octet-stream",
-      "x-captureflow-device": deviceId,
       "content-length": String(bytes.byteLength),
-    },
+    }),
     body: toBody(bytes),
   });
   return parseResponse<T>(res, path);

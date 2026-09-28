@@ -22,17 +22,10 @@ export function StorageUsage({
   email,
   userId,
 }: StorageUsageProps) {
-  const upgrade = (label: string) => (
-    <UpgradeModal
-      email={email}
-      userId={userId}
-      trigger={
-        <Button variant="primary" size="sm" fullWidth className="mt-3">
-          <Sparkles size={14} />
-          {label}
-        </Button>
-      }
-    />
+  const upgrade = (_label: string) => (
+    <p className="mt-3 text-xs text-fg-muted">
+      Manage storage in your Cloudflare account.
+    </p>
   );
 
   if (limitBytes <= 0) {

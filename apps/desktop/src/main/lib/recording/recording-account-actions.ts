@@ -1,9 +1,11 @@
+import { beginRecordingLogin } from "./recording-login";
 import { shell } from "electron";
 import { hostname } from "os";
 
 // Override at dev time, e.g. CAPTUREFLOW_APP_WEB_BASE=http://localhost:3032.
 const APP_WEB_BASE =
-  process.env.CAPTUREFLOW_APP_WEB_BASE ?? "https://captureflow.dev";
+  process.env.CAPTUREFLOW_APP_WEB_BASE ??
+  "https://captureflow-private.flindev.workers.dev";
 
 /** Open the browser at the device-token sign-in page. */
 export async function signInToRecordingAccount(): Promise<void> {
@@ -15,6 +17,9 @@ export async function signInToRecordingAccount(): Promise<void> {
   }
   const url = new URL(`${APP_WEB_BASE}/auth/callback`);
   if (label) url.searchParams.set("label", label);
+  const login = beginRecordingLogin();
+  url.searchParams.set("state", login.state);
+  url.searchParams.set("challenge", login.challenge);
   await shell.openExternal(url.toString());
 }
 
