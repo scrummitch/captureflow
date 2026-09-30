@@ -111,12 +111,8 @@ export const RecordingPlayer = forwardRef<RecordingPlayerHandle, Props>(
     const webcamRef = useRef<HTMLVideoElement | null>(null);
     const playbackError = usePlaybackSource(videoRef, videoUrl);
     const hideTimerRef = useRef<number | null>(null);
-    /*
-     * Mirror of `scrubbing`, read inside the webcam-sync effect closures
-     * so cam.currentTime writes can be skipped during a drag (each write
-     * glitches mic audio).
-     */
-    const scrubbingRef = useRef(false);
+    const webcamSyncRef = useRef<ReturnType<typeof syncWebcam> | null>(null);
+    const [cameraBuffering, setCameraBuffering] = useState(false);
 
     // The reaction handler needs the freshest currentTime at the click
     // instant; React state lags it (throttled ~10Hz via the rAF loop).
@@ -284,24 +280,14 @@ export const RecordingPlayer = forwardRef<RecordingPlayerHandle, Props>(
     useEffect(() => {
       const main = videoRef.current;
       const cam = webcamRef.current;
-      if (webcamUrl && main && cam) return syncWebcam(main, cam);
+      if (!webcamUrl || !main || !cam) return;
+      const sync = syncWebcam(main, cam, setCameraBuffering);
+      webcamSyncRef.current = sync;
+      return () => {
+        sync.dispose();
+        webcamSyncRef.current = null;
+      };
     }, [webcamUrl, videoUrl]);
-
-    /*
-     * Mirror `scrubbing` into the ref the webcam-sync closures read. On
-     * scrub-end, sync cam once if it's far enough off that a nudge can't
-     * catch up; otherwise skip the write so cam audio doesn't glitch.
-     */
-    useEffect(() => {
-      scrubbingRef.current = scrubbing;
-      if (!scrubbing && webcamUrl) {
-        const main = videoRef.current;
-        const cam = webcamRef.current;
-        if (main && cam && Math.abs(cam.currentTime - main.currentTime) > 0.1) {
-          cam.currentTime = main.currentTime;
-        }
-      }
-    }, [scrubbing, webcamUrl]);
 
     /*
      * Smooth scrubber: rAF reads video.currentTime each frame while
@@ -364,6 +350,10 @@ export const RecordingPlayer = forwardRef<RecordingPlayerHandle, Props>(
     }, [isPlaying, scrubbing]);
 
     const togglePlay = (): void => {
+      if (cameraBuffering) {
+        webcamSyncRef.current?.pause();
+        return;
+      }
       const v = videoRef.current;
       if (!v) return;
       /*
@@ -732,6 +722,15 @@ export const RecordingPlayer = forwardRef<RecordingPlayerHandle, Props>(
             />
           ) : null}
 
+          {cameraBuffering ? (
+            <div
+              role="status"
+              className="pointer-events-none absolute top-3 left-1/2 -translate-x-1/2 rounded-full bg-black/75 px-4 py-2 text-sm text-white"
+            >
+              Syncing camera…
+            </div>
+          ) : null}
+
           {/* Loading state, held until both the first frame and the real
           intrinsic dims are known. Gating on actualAspect means the
           container's aspect reservation has settled before the spinner
@@ -754,7 +753,11 @@ export const RecordingPlayer = forwardRef<RecordingPlayerHandle, Props>(
           resume affordance. Hidden until the first frame is decoded and the
           aspect is locked, so it doesn't paint over an empty or
           about-to-resize box. */}
-          {firstFrameReady && actualAspect != null && !isPlaying && !ended ? (
+          {firstFrameReady &&
+          actualAspect != null &&
+          !isPlaying &&
+          !cameraBuffering &&
+          !ended ? (
             <button
               type="button"
               onClick={togglePlay}
@@ -864,9 +867,9 @@ export const RecordingPlayer = forwardRef<RecordingPlayerHandle, Props>(
             <div className="pointer-events-auto flex items-center gap-2 text-white">
               <ControlButton
                 onClick={togglePlay}
-                label={isPlaying ? "Pause" : "Play"}
+                label={isPlaying || cameraBuffering ? "Pause" : "Play"}
               >
-                {isPlaying ? (
+                {isPlaying || cameraBuffering ? (
                   <Pause className="h-5 w-5" fill="currentColor" />
                 ) : (
                   <Play className="h-5 w-5" fill="currentColor" />
