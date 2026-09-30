@@ -1,13 +1,6 @@
-import type { Metadata } from "next";
-import { SuggestFeatureClient } from "./suggest-feature-client";
+import { redirect } from "next/navigation";
+import { MARKETING_SITE_URL } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Suggest a feature",
-  description:
-    "Suggest a feature for CaptureFlow. Submit feature requests and help shape the open-source macOS screen recorder’s roadmap.",
-  alternates: { canonical: "/suggest-feature" },
-};
-
-export default function SuggestFeaturePage() {
-  return <SuggestFeatureClient />;
+export default function Page() {
+  redirect(MARKETING_SITE_URL);
 }

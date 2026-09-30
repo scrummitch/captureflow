@@ -43,7 +43,7 @@ export function RecordingsList({
       <Card className="mt-6 p-6">
         <EmptyState className="text-center text-sm text-fg-muted">
           You haven&rsquo;t created any recording links yet. Record in the
-          CaptureFlow Private extension and your recordings will show up here.
+          recorder extension and your recordings will show up here.
         </EmptyState>
       </Card>
     );

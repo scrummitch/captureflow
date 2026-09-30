@@ -14,14 +14,13 @@ import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 import "./material-symbols-subset.css";
 
-const SITE_DESCRIPTION =
-  "Open-source, self-hostable screen recording and screenshots with instant shareable links.";
+const SITE_DESCRIPTION = "Screen recordings and screenshots shared by Flindev.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "CaptureFlow",
-    template: "%s · CaptureFlow",
+    default: "Flindev",
+    template: "%s · Flindev",
   },
   description: SITE_DESCRIPTION,
   // Per AGPL-3.0 §7(b) this generator attribution is a required legal notice — downstream operators must keep it.
@@ -38,21 +37,21 @@ export const metadata: Metadata = {
   manifest: "/site.webmanifest",
   openGraph: {
     type: "website",
-    siteName: "CaptureFlow",
-    title: "CaptureFlow",
+    siteName: "Flindev",
+    title: "Flindev",
     description: SITE_DESCRIPTION,
     images: [
       {
         url: "/og-image.png",
         width: 3200,
         height: 1680,
-        alt: "CaptureFlow — open-source screen recording with instant shareable links",
+        alt: "Flindev — recordings and screenshots",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "CaptureFlow",
+    title: "Flindev",
     description: SITE_DESCRIPTION,
     images: ["/og-image.png"],
   },
@@ -84,10 +83,10 @@ export default async function RootLayout({
         <AnalyticsProvider />
         {children}
         <a
-          href="https://github.com/scrummitch/captureflow"
-          className="fixed bottom-2 right-3 text-xs text-fg-muted"
+          href="/legal"
+          className="fixed bottom-2 left-3 z-50 rounded bg-canvas px-2 py-1 text-xs text-fg-muted hover:text-fg"
         >
-          Fork source
+          Source & licenses
         </a>
       </body>
     </html>

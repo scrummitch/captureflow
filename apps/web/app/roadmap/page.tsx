@@ -1,20 +1,6 @@
-import type { Metadata } from "next";
-import { MarketingPage } from "@/components/marketing/marketing-page";
-import { RoadmapSection } from "@/components/marketing/roadmap-section";
+import { redirect } from "next/navigation";
+import { MARKETING_SITE_URL } from "@/lib/site";
 
-export const dynamic = "force-dynamic";
-
-export const metadata: Metadata = {
-  title: "Roadmap",
-  description:
-    "What is shipping next in CaptureFlow — the macOS app, Windows support, a Firefox extension, transcripts, and everything else on the backlog.",
-  alternates: { canonical: "/roadmap" },
-};
-
-export default function RoadmapPage() {
-  return (
-    <MarketingPage>
-      <RoadmapSection headingLevel={1} />
-    </MarketingPage>
-  );
+export default function Page() {
+  redirect(MARKETING_SITE_URL);
 }

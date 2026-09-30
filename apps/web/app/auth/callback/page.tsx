@@ -76,9 +76,7 @@ export default async function CallbackPage({
     !/^[A-Za-z0-9_-]{43}$/.test(sp.challenge)
   ) {
     return (
-      <main className="p-8">
-        Start sign-in from your CaptureFlow desktop app.
-      </main>
+      <main className="p-8">Start sign-in from your Flindev desktop app.</main>
     );
   }
   const code = await issueLoginCode(session.user.id, sp.challenge, label);

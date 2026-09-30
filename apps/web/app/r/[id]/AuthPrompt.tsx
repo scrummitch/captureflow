@@ -9,12 +9,6 @@ export function AuthPrompt({ marketingUrl, loginUrl }: Props) {
   return (
     <div className="flex items-center gap-1.5">
       <a
-        href={`${marketingUrl}/#pricing`}
-        className={buttonVariants({ variant: "ghost", size: "sm" })}
-      >
-        Pricing
-      </a>
-      <a
         href={loginUrl}
         className={buttonVariants({ variant: "secondary", size: "sm" })}
       >
@@ -24,7 +18,7 @@ export function AuthPrompt({ marketingUrl, loginUrl }: Props) {
         href={marketingUrl}
         className={buttonVariants({ variant: "primary", size: "sm" })}
       >
-        Get CaptureFlow free
+        Visit Flindev
       </a>
     </div>
   );

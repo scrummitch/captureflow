@@ -22,7 +22,7 @@ export default function SetupPage() {
         <li>
           Choose <strong>Load unpacked</strong> and select the extracted folder.
         </li>
-        <li>Open CaptureFlow Private from the toolbar and sign in here.</li>
+        <li>Open the recorder from the toolbar and sign in here.</li>
       </ol>
       <p className="mt-6 text-sm text-fg-muted">
         The extension supports screen, window and tab recording. Choose what to

@@ -1,18 +1,17 @@
 export const SITE_URL =
-  process.env.NEXT_PUBLIC_MARKETING_SITE_URL ??
+  process.env.NEXT_PUBLIC_APP_WEB_SITE_URL ??
   "https://captureflow-private.flindev.workers.dev";
 
 export const RECORDING_SITE_URL = SITE_URL;
-export const MARKETING_SITE_URL = SITE_URL;
+export const MARKETING_SITE_URL = "https://flindev.com";
 
 export const APP_WEB_SITE_URL =
   process.env.NEXT_PUBLIC_APP_WEB_SITE_URL ?? SITE_URL;
 
-export const PRODUCT_NAME = "CaptureFlow";
+export const PRODUCT_NAME = "Flindev";
 
-// Surfaced as the AGPL-3.0 §7(b) attribution link in the public viewers —
-// downstream operators must preserve it.
-export const SOURCE_REPO_URL = "https://github.com/sardorml/captureflow";
+// Source for this deployment; upstream attribution is preserved on /legal.
+export const SOURCE_REPO_URL = "https://github.com/scrummitch/captureflow";
 
 // Dev docs server is pinned to port 3033 in apps/docs/package.json.
 export const DOCS_URL =

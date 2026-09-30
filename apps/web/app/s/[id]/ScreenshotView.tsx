@@ -64,7 +64,7 @@ export function ScreenshotView({
     <div className="flex min-h-screen flex-col bg-canvas text-fg">
       <AuthSync initialUserId={viewerUserId ?? null} />
       <ViewerNav
-        homeUrl={APP_SITE_URL}
+        homeUrl={MARKETING_SITE_URL}
         productName={PRODUCT_NAME}
         leading={leading}
         viewCount={viewCount}

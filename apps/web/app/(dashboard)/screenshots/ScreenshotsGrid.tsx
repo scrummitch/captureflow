@@ -48,7 +48,7 @@ export function ScreenshotsGrid({
     return (
       <Card className="mt-6 p-6">
         <EmptyState className="text-center text-sm text-fg-muted">
-          No screenshots yet. Open CaptureFlow → Screenshot tab → pick a
+          No screenshots yet. Open the recorder → Screenshot tab → pick a
           Display, Window, or Area to capture. Your screenshot appears here
           automatically.
         </EmptyState>

@@ -29,7 +29,7 @@ export function CallbackHandoff({ deepLink, email }: CallbackHandoffProps) {
     <main className="flex min-h-screen items-center justify-center px-6 py-10">
       <div className="w-full max-w-md text-center">
         <h1 className="text-2xl font-semibold tracking-tight text-neutral-100">
-          {opened ? "Returning to CaptureFlow…" : "Signing you in…"}
+          {opened ? "Returning to Flindev…" : "Signing you in…"}
         </h1>
         <p className="mt-2 text-sm text-neutral-400">
           Signed in as <span className="text-neutral-200">{email}</span>.
@@ -39,7 +39,7 @@ export function CallbackHandoff({ deepLink, email }: CallbackHandoffProps) {
           className="mt-8 inline-block rounded-lg bg-white px-4 py-2 text-sm font-medium text-neutral-950 transition-opacity hover:opacity-90"
           href={deepLink}
         >
-          Open CaptureFlow
+          Open Flindev
         </a>
         <p className="mt-6 text-xs text-neutral-500">
           If nothing happens, click the button above. You can close this tab

@@ -176,7 +176,7 @@ export default async function RecordingPage({ params }: { params: Params }) {
     return (
       <>
         <ViewerNav
-          homeUrl={APP_WEB_SITE_URL}
+          homeUrl={MARKETING_SITE_URL}
           productName={PRODUCT_NAME}
           label="recording"
           viewCount={row.viewCount}
@@ -279,7 +279,7 @@ export default async function RecordingPage({ params }: { params: Params }) {
     <div className="flex min-h-screen flex-col bg-canvas text-fg lg:h-screen lg:overflow-hidden">
       <AuthSync initialUserId={visitor?.userId ?? null} />
       <ViewerNav
-        homeUrl={APP_WEB_SITE_URL}
+        homeUrl={MARKETING_SITE_URL}
         productName={PRODUCT_NAME}
         /* The workspace panel is the signed-in user's own; an anonymous viewer
            has nothing to put in it, and Sidebar's requireSession would bounce

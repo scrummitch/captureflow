@@ -93,7 +93,7 @@ export function PendingRecording({
                 <p className="max-w-sm text-sm text-neutral-400">
                   The link was created but the video never arrived. Try the link
                   again in a minute, or record a fresh recording from the
-                  CaptureFlow desktop app.
+                  Flindev desktop app.
                 </p>
               </>
             ) : (

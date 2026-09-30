@@ -15,8 +15,8 @@ export type ScreenshotNavbarProps = {
 };
 
 export function ScreenshotNavbar({
-  brandLabel = "CaptureFlow",
-  brandHref = "/",
+  brandLabel = "Flindev",
+  brandHref = "https://flindev.com",
   title,
   createdAt,
   postedByName = null,

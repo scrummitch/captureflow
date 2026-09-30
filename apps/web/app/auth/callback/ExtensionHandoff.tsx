@@ -51,8 +51,8 @@ export function ExtensionHandoff({
       <div className="max-w-sm">
         {state === "error" ? (
           <p className="text-fg">
-            Couldn’t reach the CaptureFlow extension. Make sure it’s installed,
-            then click its icon to try again.
+            Couldn’t reach the Flindev extension. Make sure it’s installed, then
+            click its icon to try again.
           </p>
         ) : (
           <p className="text-fg">

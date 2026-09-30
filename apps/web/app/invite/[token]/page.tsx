@@ -43,7 +43,7 @@ export default async function InvitePage({ params }: Props) {
   }
 
   const workspace = await getWorkspaceById(env.DB, invite.workspace_id);
-  const workspaceName = workspace?.name ?? "a CaptureFlow workspace";
+  const workspaceName = workspace?.name ?? "a Flindev workspace";
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-canvas p-6 text-fg">
@@ -54,7 +54,7 @@ export default async function InvitePage({ params }: Props) {
         <p className="mt-3 text-fg-muted">
           You&rsquo;ve been invited to join{" "}
           <strong className="text-fg-strong">{workspaceName}</strong> on
-          CaptureFlow. Workspaces let teammates share recordings and screenshots
+          Flindev. Workspaces let teammates share recordings and screenshots
           privately.
         </p>
         <form action={acceptInviteAction} className="mt-6">

@@ -35,7 +35,7 @@ export function AuthForm({
   }
   return (
     <section className="w-full max-w-sm">
-      <h1 className="text-2xl font-semibold">Your CaptureFlow</h1>
+      <h1 className="text-2xl font-semibold">Sign in to Flindev</h1>
       <p className="mt-2 mb-6 text-sm text-fg-muted">
         Sign in to record, manage and share your videos.
       </p>

@@ -18,9 +18,12 @@ export function AuthShell({
         <ThemeToggle initialTheme={theme} />
       </div>
 
-      <Link href="/" className="group flex items-center gap-2.5">
+      <Link
+        href="https://flindev.com"
+        className="group flex items-center gap-2.5"
+      >
         <BrandMark size={26} />
-        <span className="text-fg text-base font-semibold">CaptureFlow</span>
+        <span className="text-fg text-base font-semibold">Flindev</span>
       </Link>
 
       <div className="flex w-full flex-1 items-center justify-center py-12">
