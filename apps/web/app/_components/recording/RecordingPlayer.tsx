@@ -1,5 +1,8 @@
 "use client";
 
+import { syncWebcam } from "@/lib/recording/webcam-sync";
+import { usePlaybackSource } from "@/lib/recording/use-playback-source";
+
 import {
   forwardRef,
   useEffect,
@@ -106,6 +109,7 @@ export const RecordingPlayer = forwardRef<RecordingPlayerHandle, Props>(
     // Companion webcam <video>: mirrors play/pause/seek/playbackRate from
     // the main video, carries its own audio (mic). Null without webcamUrl.
     const webcamRef = useRef<HTMLVideoElement | null>(null);
+    const playbackError = usePlaybackSource(videoRef, videoUrl);
     const hideTimerRef = useRef<number | null>(null);
     /*
      * Mirror of `scrubbing`, read inside the webcam-sync effect closures
@@ -277,112 +281,11 @@ export const RecordingPlayer = forwardRef<RecordingPlayerHandle, Props>(
       }
     }, [config.systemMuted]);
 
-    /*
-     * Webcam sync — main is master, cam follows. Each cam.currentTime
-     * write triggers a full audio-decoder flush in Chromium, audible as a
-     * glitch, so we minimize writes:
-     *   1. Skip redundant writes on play/seeked when cam is already
-     *      within HARD_RESYNC_S of main.
-     *   2. Close small drifts with playbackRate nudges (±NUDGE_RATE)
-     *      instead of seeking — audio stays continuous.
-     *   3. Hard seek only when drift exceeds HARD_RESYNC_S.
-     * Cam stalls never touch main, preserving its audio.
-     */
     useEffect(() => {
-      if (!webcamUrl) return;
       const main = videoRef.current;
       const cam = webcamRef.current;
-      if (!main || !cam) return;
-
-      // Hard-resync only when drift is unmistakable (≥250ms); below that
-      // a playbackRate nudge avoids seeking.
-      const HARD_RESYNC_S = 0.25;
-      // Below this drift, leave cam alone — within imperceptible AV sync.
-      const NUDGE_DEAD_ZONE_S = 0.04;
-      const NUDGE_RATE = 0.04; // ±4% rate adjustment to drift back into sync
-
-      let rafId = 0;
-
-      const playCam = (): void => {
-        if (!cam.paused) return;
-        cam.play().catch(() => {
-          /* drift loop will retry */
-        });
-      };
-
-      const seekCamIfFar = (): void => {
-        if (Math.abs(cam.currentTime - main.currentTime) > HARD_RESYNC_S) {
-          cam.currentTime = main.currentTime;
-        }
-      };
-
-      const onMainPlay = (): void => {
-        // seekCamIfFar skips the write when already in lockstep — that
-        // redundant write is the top cause of audio glitches on unpause.
-        seekCamIfFar();
-        playCam();
-      };
-      const onMainPause = (): void => {
-        if (!cam.paused) cam.pause();
-      };
-      const onMainSeeking = (): void => {
-        if (scrubbingRef.current) return;
-        seekCamIfFar();
-      };
-      const onMainSeeked = (): void => {
-        if (scrubbingRef.current) return;
-        seekCamIfFar();
-        if (!main.paused) playCam();
-      };
-      const onMainRate = (): void => {
-        cam.playbackRate = main.playbackRate;
-      };
-      const onMainEnded = (): void => {
-        if (!cam.paused) cam.pause();
-      };
-
-      const tick = (): void => {
-        if (!main.paused && !cam.paused && !scrubbingRef.current) {
-          const drift = cam.currentTime - main.currentTime;
-          const absDrift = Math.abs(drift);
-          if (absDrift > HARD_RESYNC_S) {
-            cam.currentTime = main.currentTime;
-            cam.playbackRate = main.playbackRate;
-          } else if (absDrift > NUDGE_DEAD_ZONE_S) {
-            // Nudge: speed cam up when behind (drift < 0), slow it when
-            // ahead (drift > 0). Audio glides without a seek glitch.
-            const target =
-              main.playbackRate + (drift < 0 ? NUDGE_RATE : -NUDGE_RATE);
-            if (Math.abs(cam.playbackRate - target) > 0.001) {
-              cam.playbackRate = target;
-            }
-          } else if (Math.abs(cam.playbackRate - main.playbackRate) > 0.001) {
-            cam.playbackRate = main.playbackRate;
-          }
-        } else if (!main.paused && cam.paused && !scrubbingRef.current) {
-          playCam();
-        }
-        rafId = window.requestAnimationFrame(tick);
-      };
-      rafId = window.requestAnimationFrame(tick);
-
-      main.addEventListener("play", onMainPlay);
-      main.addEventListener("pause", onMainPause);
-      main.addEventListener("ended", onMainEnded);
-      main.addEventListener("seeking", onMainSeeking);
-      main.addEventListener("seeked", onMainSeeked);
-      main.addEventListener("ratechange", onMainRate);
-
-      return () => {
-        window.cancelAnimationFrame(rafId);
-        main.removeEventListener("play", onMainPlay);
-        main.removeEventListener("pause", onMainPause);
-        main.removeEventListener("ended", onMainEnded);
-        main.removeEventListener("seeking", onMainSeeking);
-        main.removeEventListener("seeked", onMainSeeked);
-        main.removeEventListener("ratechange", onMainRate);
-      };
-    }, [webcamUrl]);
+      if (webcamUrl && main && cam) return syncWebcam(main, cam);
+    }, [webcamUrl, videoUrl]);
 
     /*
      * Mirror `scrubbing` into the ref the webcam-sync closures read. On
@@ -720,7 +623,6 @@ export const RecordingPlayer = forwardRef<RecordingPlayerHandle, Props>(
           >
             <video
               ref={videoRef}
-              src={videoUrl}
               poster={posterUrl}
               /*
                * object-contain so an aspect mismatch (server row dim vs the
@@ -835,9 +737,15 @@ export const RecordingPlayer = forwardRef<RecordingPlayerHandle, Props>(
           container's aspect reservation has settled before the spinner
           hides; otherwise an old recording with a stale row dim resizes behind
           the spinner and jumps on reveal. */}
-          {!firstFrameReady || actualAspect == null ? (
+          {playbackError || !firstFrameReady || actualAspect == null ? (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-neutral-900">
-              <span className="block h-10 w-10 animate-spin rounded-full border-2 border-neutral-700 border-t-neutral-200" />
+              {playbackError ? (
+                <p role="alert" className="px-6 text-center text-sm text-white">
+                  {playbackError}
+                </p>
+              ) : (
+                <span className="block h-10 w-10 animate-spin rounded-full border-2 border-neutral-700 border-t-neutral-200" />
+              )}
             </div>
           ) : null}
 
